@@ -1,6 +1,7 @@
 import React, { memo,useState,useEffect, useRef,useCallback,useMemo} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import retrieveOptimalPath from './osm_overpass_road_data';
+import locateme from './1900048.png'
 
 
 import {
@@ -102,47 +103,170 @@ export function DraggableMarker() {
   }
   
 
-  export function LeafletControlGeocoder() {
+
+  
+
+// USE THIS PURPOSELY FOR NAVIGATION
+  // export const navigate = ({ setCurrentPosition }) => {
+  //   const map = useMap();
+  
+  //   useEffect(() => {
+  //     const locateButton = L.control({ position: 'topright' });
+  
+  //     locateButton.onAdd = function () {
+  //       const button = L.DomUtil.create('button', 'locate-button');
+  //       button.innerHTML = `<img src="${locateme}" alt="Locate Me" style="width: 35px; height: 35px;" />`;        
+  //       button.title = "Locate Me"
+  //       button.onclick = handleLocate;
+  //       return button;
+  //     };
+  
+  //     const handleLocate = () => {
+  //       if (navigator.geolocation) {
+  //         const geoId = navigator.geolocation.watchPosition(
+  //           (position) => {
+              
+  //             const { latitude, longitude,accuracy } = position.coords;
+  //             const currentLocation = [latitude, longitude];
+  //             console.log(currentLocation,accuracy)
+              
+  //             // Center the map on the user's location
+  //             map.setView(currentLocation, 13); // You can adjust the zoom level
+  
+  //             // Update the current position state
+  //             setCurrentPosition(currentLocation);
+  //           },
+  //           (error) => {
+  //             console.error("Error getting location:", error);
+  //             console.log("Unable to retrieve your location. Please allow location access.");
+  //           },
+  //           {
+  //             enableHighAccuracy: true, // Request higher accuracy
+  //             timeout: 5000, // Set a timeout for the request
+  //             maximumAge: 0 // Don't use cached position
+  //           }
+
+  //         );
+  //         return ()=>{
+  //           console.log("clear watch called")
+  //           window.navigator.geolocation.clearWatch(geoId)
+  //         }
+  //       } else {
+  //         alert("Geolocation is not supported by this browser.");
+  //       }
+  //     };
+  
+  //     locateButton.addTo(map);
+  
+  //     return () => {
+        
+  //       map.removeControl(locateButton);
+  //     };
+  //   }, [map, setCurrentPosition]);
+  
+  //   return null;
+  // };
+  
+  export const LocateUserButton = ({ setCurrentPosition }) => {
     const map = useMap();
   
     useEffect(() => {
-      var geocoder = L.Control.Geocoder.nominatim();
-      if (typeof URLSearchParams !== "undefined" && window.location.search) {
-        // parse /?geocoder=nominatim from URL
-        var params = new URLSearchParams(window.location.search);
-        var geocoderString = params.get("geocoder");
-        if (geocoderString && L.Control.Geocoder[geocoderString]) {
-          geocoder = L.Control.Geocoder[geocoderString]();
-        } else if (geocoderString) {
-          console.warn("Unsupported geocoder", geocoderString);
-        }
-      }
+      const locateButton = L.control({ position: 'topright' });
   
-      const control = L.Control.geocoder({
-        query: "",
-        placeholder: "Search here...",
-        defaultMarkGeocode: false,
-        geocoder
-      })
-        .on("markgeocode", function (e) {
-          var latlng = e.geocode.center;
-          L.marker(latlng)
-            .addTo(map)
-            .bindPopup(e.geocode.name)
-            .openPopup();
-          map.fitBounds(e.geocode.bbox);
-        })
-        .addTo(map);
+      locateButton.onAdd = function () {
+        const button = L.DomUtil.create('button', 'locate-button');
+        button.innerHTML = `<img src="${locateme}" alt="Locate Me" style="width: 35px; height: 35px;" />`;        
+        button.title = "Locate Me"
+        button.onclick = handleLocate;
+        return button;
+      };
+  
+      const handleLocate = () => {
+        if (navigator.geolocation) {
+          const geoId = navigator.geolocation.getCurrentPosition(
+            (position) => {
+              
+              const { latitude, longitude,accuracy } = position.coords;
+              const currentLocation = [latitude, longitude];
+              console.log(currentLocation,accuracy)
+              
+              // Center the map on the user's location
+              map.setView(currentLocation, 30); // You can adjust the zoom level
+  
+              // Update the current position state
+              setCurrentPosition(currentLocation);
+            },
+            (error) => {
+              console.error("Error getting location:", error);
+              console.log("Unable to retrieve your location. Please allow location access.");
+            },
+            {
+              // enableHighAccuracy: true, // Request higher accuracy
+              // timeout: 5000, // Set a timeout for the request
+              // maximumAge: 0 // Don't use cached position
+            }
 
-         return () => {
+          );
+          
+        } else {
+          alert("Geolocation is not supported by this browser.");
+        }
+      };
+  
+      locateButton.addTo(map);
+  
+      return () => {
+        
+        map.removeControl(locateButton);
+      };
+    }, [map, setCurrentPosition]);
+  
+    return null;
+  };
+
+
+
+export function LeafletControlGeocoder() {
+  const map = useMap();
+
+  useEffect(() => {
+    var geocoder = L.Control.Geocoder.nominatim();
+    
+    if (typeof URLSearchParams !== "undefined" && window.location.search) {
+      // Parse /?geocoder=nominatim from URL
+      var params = new URLSearchParams(window.location.search);
+      var geocoderString = params.get("geocoder");
+      if (geocoderString && L.Control.Geocoder[geocoderString]) {
+        geocoder = L.Control.Geocoder[geocoderString]();
+      } else if (geocoderString) {
+        console.warn("Unsupported geocoder", geocoderString);
+      }
+    }
+
+    const control = L.Control.geocoder({
+      query: "",
+      placeholder: "Search OSM Source...",
+      defaultMarkGeocode: false,
+      geocoder
+    })
+      .on("markgeocode", function (e) {
+        var latlng = e.geocode.center;
+        // Remove the marker addition
+        map.setView(latlng, map.getZoom()); // Zoom to the location instead of placing a marker
+        map.fitBounds(e.geocode.bbox); // Optionally fit bounds to the result
+      })
+      .addTo(map);
+
+    return () => {
       if (control) {
         map.removeControl(control);
       }
     };
-    }, []);
-  
-    return null;
-  }
+  }, [map]);
+
+  return null;
+}
+
 
 
   // export const LocateCenterMarkerComponent = ({ setMaxBounds }) => {

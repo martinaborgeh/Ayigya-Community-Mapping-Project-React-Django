@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 
 import './style.css';
 import './index.css';
+import './custom_css.css'
 import App from './App';
 import 'leaflet/dist/leaflet.css'
 import "leaflet-control-geocoder/dist/Control.Geocoder.css";

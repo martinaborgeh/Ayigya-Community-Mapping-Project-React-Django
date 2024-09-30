@@ -1,0 +1,11 @@
+.locate-button {
+  background-color: #fff; /* Make background transparent */
+  border: none; /* Remove border */
+  padding: 0; /* Remove padding */
+  cursor: pointer; /* Change cursor to pointer */
+}
+.locate-button img {
+  width: 24px; /* Set image width */
+  height: 24px; /* Set image height */
+  display: block; /* Ensure no extra space around */
+}
