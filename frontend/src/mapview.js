@@ -209,6 +209,7 @@ const MapView = () => {
   const [geolocation, setGeolocation] = useState(null);
   const [marker, setMarker] = useState(null);
   const [isOpen, setIsOpen] = useState(false)
+  // const [maplayers, setMapLayers] = useState([])
   
 
   useEffect(() => {
@@ -222,7 +223,7 @@ const MapView = () => {
         const parser = new WMTSCapabilities();
         const result = parser.read(text);
         const options = optionsFromCapabilities(result, {
-          layer: 'ne:projected_mosaic',
+          layer: 'nurc:AyigyaGeoTIFF',
           matrixSet: 'EPSG:4326'
         });
 
@@ -237,6 +238,7 @@ const MapView = () => {
           title: 'Drone Image',
           visible: true
         });
+        
 
 
         
@@ -254,6 +256,7 @@ const MapView = () => {
             })
           });
 
+         
 
           const geo = new Geolocation({
             tracking: true,
@@ -311,6 +314,7 @@ const MapView = () => {
         setMap(null);
       }
     };
+    // console.log("maplayer",maplayers)
   }, [map]);
 
  
@@ -335,7 +339,7 @@ const MapView = () => {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        <QueryPanel isOpen={isOpen} setIsOpen={setIsOpen} />
+        <QueryPanel isOpen={isOpen} map = {map}  />
         <div className="flex-1 relative">
           <button 
             style={{ zIndex: 4000 }} 

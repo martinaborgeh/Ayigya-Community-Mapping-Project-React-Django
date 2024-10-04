@@ -72,15 +72,15 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 
-const WMSLayers = ({isWMSLayersOpen,setIsWMSLayersOpen}) => {
-//   const [isWMSLayersOpen, setIsWMSLayersOpen] = useState(false);
+const WMSLayers = () => {
+  const [isWMSLayersOpen, setIsWMSLayersOpen] = useState(false);
   const [layers, setLayers] = useState([]);
   const [selectedLayer, setSelectedLayer] = useState(null);
   const [error, setError] = useState(null);
 
   const fetchWmsLayers = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:8080/geoserver/wms?request=getCapabilities');
+      const response = await fetch('http://localhost:8080/geoserver/ne/wms?request=getCapabilities');
       const text = await response.text();
       const parser = new DOMParser();
       const xml = parser.parseFromString(text, 'text/xml');
