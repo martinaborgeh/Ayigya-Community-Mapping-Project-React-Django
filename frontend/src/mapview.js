@@ -194,8 +194,13 @@ import VectorSource from 'ol/source/Vector';
 import { Icon, Style } from 'ol/style';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
+import LayerSwitcher from 'ol-layerswitcher';
+import 'ol-layerswitcher/dist/ol-layerswitcher.css';
 import locateme from './1900048.png'
 import QueryPanel from './querypanel'
+import SimpleQuery from './simplequery'
+import DetailsTableView from './tableview'
+
 
 
 
@@ -209,6 +214,11 @@ const MapView = () => {
   const [geolocation, setGeolocation] = useState(null);
   const [marker, setMarker] = useState(null);
   const [isOpen, setIsOpen] = useState(false)
+  const layerSwitcherRef = useRef();
+  const [tableColumnNames,setTableColumnNames] = useState([])
+  const [tableData,seTableData] = useState([])
+  const [results, setResults] = useState('');
+
   // const [maplayers, setMapLayers] = useState([])
   
 
@@ -223,7 +233,7 @@ const MapView = () => {
         const parser = new WMTSCapabilities();
         const result = parser.read(text);
         const options = optionsFromCapabilities(result, {
-          layer: 'nurc:AyigyaGeoTIFF',
+          layer: 'ne:projected_mosaic',
           matrixSet: 'EPSG:4326'
         });
 
@@ -232,23 +242,24 @@ const MapView = () => {
           return;
         }
 
+        
+        
+
+
+        
+
         const wmtsSource = new WMTS(options);
-        const wmtsLayer = new TileLayer({
-          source: wmtsSource,
-          title: 'Drone Image',
-          visible: true
-        });
-        
+        const baseLayer1 = new TileLayer({
+        source: wmtsSource,
+        title: 'BaseLayer',
+        visible: true
+      });
 
-
-        
-
-        
 
         if (isMounted && !map) {
           const initialMap = new Map({
             target: mapRef.current,
-            layers: [wmtsLayer],
+            layers: [],
             view: new View({
               projection: 'EPSG:4326',
               center: [-1.57465, 6.69145],
@@ -256,44 +267,70 @@ const MapView = () => {
             })
           });
 
-         
+          const layerSwitcher = new LayerSwitcher({
+            
+            reverse: true,
+            groupSelectStyle: 'group'
+          });
+          initialMap.addLayer(baseLayer1)
+          initialMap.addControl(layerSwitcher);
+          layerSwitcherRef.current = layerSwitcher;
+          
 
-          const geo = new Geolocation({
-            tracking: true,
-            projection: 'EPSG:4326', // Set projection to match your map's projection
-          });
+          
+
+         
+          // const baseLayer1 = new TileLayer({
+          //   source: new WMTS({ /* Base Layer 1 Source */ }),
+          //   title: 'Base Layer 1',
+          //   visible: true,
+          // });
+          
+          // layerSwitcher.addBaseLayer(baseLayer1);
+          
+
+         // Overlay Layer Group
+        
+
+
+          // const geo = new Geolocation({
+          //   tracking: true,
+          //   projection: 'EPSG:4326', // Set projection to match your map's projection
+          // });
       
-          geo.on('change:position', function () {
-            const coordinates = geo.getPosition();
-            if (coordinates) {
-              if (marker) {
-                marker.setGeometry(new Point(coordinates)); // Update marker position
-              } else {
-                // Create a new marker if it doesn't exist
-                const newMarker = new Feature(new Point(coordinates));
-                newMarker.setStyle(new Style({
-                  image: new Icon({
-                    src: 'https://openlayers.org/en/latest/examples/data/icon.png', // Your marker icon URL
-                    scale: 1,
-                  }),
-                }));
+          // geo.on('change:position', function () {
+          //   const coordinates = geo.getPosition();
+          //   if (coordinates) {
+          //     if (marker) {
+          //       marker.setGeometry(new Point(coordinates)); // Update marker position
+          //     } else {
+          //       // Create a new marker if it doesn't exist
+          //       const newMarker = new Feature(new Point(coordinates));
+          //       newMarker.setStyle(new Style({
+          //         image: new Icon({
+          //           src: 'https://openlayers.org/en/latest/examples/data/icon.png', // Your marker icon URL
+          //           scale: 1,
+          //         }),
+          //       }));
       
-                // Create a vector source and layer for the marker
-                const vectorSource = new VectorSource({
-                  features: [newMarker],
-                });
-                const vectorLayer = new VectorLayer({
-                  source: vectorSource,
-                });
+                // // Create a vector source and layer for the marker
+                // const vectorSource = new VectorSource({
+                //   features: [newMarker],
+                // });
+                // const vectorLayer = new VectorLayer({
+                //   source: vectorSource,
+                // });
       
-                initialMap.addLayer(vectorLayer); // Add the layer to the map
-                setMarker(newMarker); // Store the marker reference
-              }
-            }
-          });
+                // initialMap.addLayer(vectorLayer); // Add the layer to the map
+          //       setMarker(newMarker); // Store the marker reference
+          //     }
+          //   }
+          // });
       
          
-          setGeolocation(geo);
+          // setGeolocation(geo);
+
+          
 
           setMap(initialMap);
         }
@@ -308,12 +345,18 @@ const MapView = () => {
     
 
     return () => {
-      isMounted = false;
+      isMounted = false; // Set the mounted state to false
+  
       if (map) {
-        map.setTarget(undefined);
-        setMap(null);
+          map.setTarget(undefined); // Remove the map target
+          setMap(null); // Clear the map state
+  
+          // Remove layer switcher if it exists
+          if (layerSwitcherRef.current) {
+              map.removeControl(layerSwitcherRef.current);
+          }
       }
-    };
+  };
     // console.log("maplayer",maplayers)
   }, [map]);
 
@@ -333,36 +376,41 @@ const MapView = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col w-full h-screen">
       <div style={{ background: 'brown' }} className="mb-0 pb-0">
         <h1 className="font-bold text-6xl pb-0 mb-0 text-white">Ayigya Community WebMap View</h1>
       </div>
-
-      <div className="flex flex-1 overflow-hidden">
-        <QueryPanel isOpen={isOpen} map = {map}  />
-        <div className="flex-1 relative">
-          <button 
-            style={{ zIndex: 4000 }} 
-            onClick={() => setIsOpen(!isOpen)} 
-            className="absolute top-2  left-20 p-1 rounded-md text-md text-white font-bold bg-[#CD4631]"
-          >
-            {isOpen ? "Hide Query Panel" : "Open Query Panel"}
-          </button>
-
-          <div className="h-full bg-grey relative">
-            <div
-              ref={mapRef}
-              className="w-full h-full bg-grey"
-              style={{ zIndex: 2000 }}
-            />
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="flex flex-1">
+          {/* <div className="w-1/4"> */}
+          
+            <QueryPanel results = {results} setResults = {setResults} tableData = {tableData} tableColumnNames={tableColumnNames} setTableColumnNames = {setTableColumnNames} seTableData = {seTableData} layerSwitcherRef={layerSwitcherRef} isOpen={isOpen} map={map} />
+          {/* </div> */}
+          <div className="flex-1 relative">
+            <button
+              style={{ zIndex: 4000 }}
+              onClick={() => setIsOpen(!isOpen)}
+              className="absolute top-2 left-20 p-1 rounded-md text-md text-white font-bold bg-[#CD4631]"
+            >
+              {isOpen ? "Hide Advanced Query" : "Open Advanced Query"}
+            </button>
+            <SimpleQuery setResults = {setResults} setTableColumnNames = {setTableColumnNames} seTableData = {seTableData} map={map} />
+            <div className="h-full bg-grey relative">
+              <div
+                ref={mapRef}
+                className="w-full h-full bg-grey"
+                style={{ zIndex: 2000 }}
+              />
+            </div>
+            <button
+              onClick={handleZoomToLocation}
+              className="absolute top-20 right-5 z-[3050]"
+            >
+              <img src={locateme} alt="Locate Me" className="w-9 h-9" />
+            </button>
           </div>
-          <button
-            onClick={handleZoomToLocation}
-            className="absolute top-20 right-5 z-[3050]"
-          >
-            <img src={locateme} alt="Locate Me" className="w-9 h-9" />
-          </button>
         </div>
+        <DetailsTableView tableColumnNames = {tableColumnNames} tableData= {tableData}/>
       </div>
     </div>
   );

@@ -10,6 +10,7 @@
     "leaflet-tilelayer-wmts": "^1.0.0",
     "leaflet.wmts": "^1.0.2",
     "ol": "^10.2.0",
+    "ol-layerswitcher": "^4.1.2",
     "openlayers": "^4.6.5",
     "postcss-loader": "^8.1.1",
     "react": "^18.3.1",
