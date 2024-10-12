@@ -410,7 +410,7 @@ const MapView = () => {
             </button>
           </div>
         </div>
-        <DetailsTableView tableColumnNames = {tableColumnNames} tableData= {tableData}/>
+        <DetailsTableView map = {map} tableColumnNames = {tableColumnNames} tableData= {tableData}/>
       </div>
     </div>
   );
