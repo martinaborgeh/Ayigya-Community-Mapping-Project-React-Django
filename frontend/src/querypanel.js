@@ -9,10 +9,10 @@ import { Fill, Stroke, Style, Circle } from 'ol/style';
 import WMTS from 'ol/source/WMTS'
 import TileLayer from 'ol/layer/Tile';
 import { extend, getWidth, getHeight, getCenter, createEmpty,isEmpty, getIntersection, buffer } from 'ol/extent';
+import { Group as LayerGroup } from 'ol/layer';
 
 
-
-function QueryPanel({ layerSwitcherRef,results,setResults,tableData,setTableColumnNames,tableColumnNames,seTableData,isOpen,map}) {
+function QueryPanel({addLayerToMap ,RerenderLayerSwitcherPanel,setIsTableViewOpen,results,setResults,tableData,setTableColumnNames,tableColumnNames,seTableData,isOpen,map}) {
   const [selectedAttribute, setSelectedAttribute] = useState('None');
   const [selectedFeatureLayer, setSelectedFeatureLayer] = useState('All Feature Layers');
   const [selectedQueryType, setSelectedQueryType] = useState('None');
@@ -193,6 +193,7 @@ async function getData(layername) {
 
           const newGeojsonLayer = new VectorLayer({
             source: vectorSource,
+            title:selectedFeatureLayer,
             style: new Style({
               fill: new Fill({ color: 'rgba(255, 255, 255, 0.2)' }),
               stroke: new Stroke({ color: '#ffcc33', width: 3 }),
@@ -200,7 +201,8 @@ async function getData(layername) {
             }),
           });
 
-          map.addLayer(newGeojsonLayer);
+          addLayerToMap(newGeojsonLayer)
+          RerenderLayerSwitcherPanel(newGeojsonLayer)
           setGeojsonLayer(newGeojsonLayer);
 
           const extent = vectorSource.getExtent();
@@ -247,12 +249,20 @@ async function getData(layername) {
     }
 }
 
-async function layerExists(layerName) {
-  return map.getLayers().getArray().some(layer => 
-      layer.getSource() instanceof ImageWMS &&
-      layer.getSource().getParams().LAYERS === layerName
-  );
-}
+const layerExists = (layerName) => {
+  if (!map) return false;
+  
+  return map.getLayers().getArray().some(layer => {
+    if (layer instanceof LayerGroup) {
+      return layer.getLayers().getArray().some(subLayer => 
+        subLayer.getSource() instanceof ImageWMS &&
+        subLayer.getSource().getParams().LAYERS === layerName
+      );
+    }
+    return layer.getSource() instanceof ImageWMS &&
+           layer.getSource().getParams().LAYERS === layerName;
+  });
+};
 
 const zoomToFitAllLayers = () => {
 
@@ -308,24 +318,23 @@ const zoomToFitAllLayers = () => {
 };
 
 
- async function  createWMSLayer(layerName){
-   if(!await layerExists(selectedFeatureLayer)){
-          const wmslayer = new ImageLayer({
-                source: new ImageWMS({
-                  url: 'http://localhost:8080/geoserver/nurc/wms',
-                  params: {
-                    'LAYERS': layerName,
-                     'TILED': true,
-                  },
-                  serverType: 'geoserver',
-                  crossOrigin: 'anonymous',
-                }),
-              })
-            return wmslayer
-        }else{ 
-          return null
-        }
-   }
+const createWMSLayer = async (layerName) => {
+  if (!layerExists(layerName)) {
+    return new ImageLayer({
+      source: new ImageWMS({
+        url: 'http://localhost:8080/geoserver/nurc/wms',
+        params: {
+          'LAYERS': layerName,
+          'TILED': true,
+        },
+        serverType: 'geoserver',
+        crossOrigin: 'anonymous',
+      }),
+      title: layerName,
+    });
+  }
+  return null;
+};
 
  
 
@@ -350,12 +359,14 @@ const zoomToFitAllLayers = () => {
          
             // await getData("nurc:"+layers[i].name)
             
-            if (newLayer1!==null) map.addLayer(newLayer1)
+            await addLayerToMap(newLayer1)
+            await RerenderLayerSwitcherPanel(newLayer1)
+            
         }
         
         // setTableColumnNames(...new Set(allAttributes))
       
-       await zoomToFitAllLayers() 
+      //  await zoomToFitAllLayers() 
         
    
     }else if (selectedFeatureLayer !=="All Feature Layers" & selectedAttribute ==="None" & selectedQueryType ==="None"){
@@ -367,7 +378,9 @@ const zoomToFitAllLayers = () => {
       const data = await getData("nurc:"+selectedFeatureLayer)
       
       console.log("getdata",data)
-      if (newLayer!==null) map.addLayer(newLayer)
+      setIsTableViewOpen(true)
+      await addLayerToMap(newLayer)
+      await RerenderLayerSwitcherPanel(newLayer)
       // layerSwitcherRef.current.addOverlay(newLayer)
       
 
@@ -385,7 +398,9 @@ const zoomToFitAllLayers = () => {
         const data1 = await getAttributeNames("nurc:"+selectedFeatureLayer)
         setTableColumnNames(data1)
         // const filterquery
+        setIsTableViewOpen(true)
         filterQuery()
+        
       }else if (selectedFeatureLayer ==="All Feature Layers" & selectedAttribute !=="None" & selectedQueryType ==="None"){
        console.log("please select an operator")
       }else if (selectedFeatureLayer ==="All Feature Layers" & selectedAttribute ==="None" & selectedQueryType !=="None"){
@@ -468,14 +483,14 @@ async function SetOperations(attribute){
  
 
   return (
-    <div className="flex w-1/4 flex-col mt-0 pt-0 h-full" >
+    <div className="flex w-1/4 flex-col mt-0 pt-0 h-3/4" >
       <div className="flex flex-col items-left bg-white p-2">
         <label htmlFor="feature-layer" className="mb-2">Select Feature Layer:</label>
         <select 
           id="feature-layer" 
           onChange={handleSelectedFeatureLayerOnChange} 
           value={selectedFeatureLayer} 
-          className="border rounded p-2 mb-4"
+          className="border rounded p-2 mb-2"
         >
           <option value="All Feature Layers">All Feature Layers</option>
            {layers.map((layer, index) => (<option key ={index} value={layer.name}>{layer.name}</option>))}
@@ -488,7 +503,7 @@ async function SetOperations(attribute){
           id="attribute" 
           onChange={handleSelectedAttributeOnChange} 
           value={selectedAttribute} 
-          className="border rounded p-2 mb-4"
+          className="border rounded p-2 mb-2"
         >
           <option value="None">None</option>
           {attributes.map((attribute, index) => (<option key ={index} value={attribute.name}>{attribute.name}</option>))}
@@ -500,7 +515,7 @@ async function SetOperations(attribute){
           id="query-type" 
           onChange={handleSelectedQueryTypeOnChange} 
           value={selectedQueryType} 
-          className="border rounded p-2 mb-4"
+          className="border rounded p-2 mb-2"
         >
           <option value="None">None</option>
           {operators.map((operator, index) => (<option key ={index} value={operator.sign}>{operator.text}</option>))}
@@ -513,7 +528,7 @@ async function SetOperations(attribute){
           id="value" 
           value={value}
           onChange={handleValueChange}
-          className="border rounded p-2 mb-4"
+          className="border rounded p-2 mb-2"
         />
 
         <label htmlFor="results" className="mb-2">Number of Results Returned:</label>
@@ -521,7 +536,7 @@ async function SetOperations(attribute){
           id="results" 
           value={results}
           onChange={handleResultsChange}
-          className="border rounded p-2 mb-4"
+          className="border rounded p-2 mb-2"
         />
 
 <button onClick={handleQuery} className="mt-2" style={{ width: "60px", borderRadius: "2px", color: "white", background: "brown" }}>Query</button>

@@ -88,16 +88,21 @@ const DetailsTableView = ({ tableData, tableColumnNames, map }) => {
 
   return (
     <div className="h-1/4 bg-gray-800 w-full overflow-hidden relative">
-      <table className="text-white w-full border-collapse">
-        <thead className="bg-gray-900 sticky top-0 z-10">
-          <tr>
-            {tableColumnNames.map((column, index) => (
-              <th key={index} className="border border-white p-2">{column.name}</th>
-            ))}
-          </tr>
-        </thead>
-      </table>
-      <div className="overflow-auto h-full" ref={tableRef}>
+      {/* Table Header */}
+      <div className="overflow-hidden">
+        <table className="text-white w-full border-collapse">
+          <thead className="bg-gray-900 sticky top-0 z-10">
+            <tr>
+              {tableColumnNames.map((column, index) => (
+                <th key={index} className="border border-white p-2">{column.name}</th>
+              ))}
+            </tr>
+          </thead>
+        </table>
+      </div>
+      
+      {/* Scrollable Table Body */}
+      <div className="overflow-y-auto h-full" ref={tableRef} style={{ maxHeight: 'calc(100% - 40px)' }}> {/* Adjust the height as necessary */}
         <table className="text-white w-full border-collapse">
           <tbody>
             {tableData.map((feature, rowIndex) => {

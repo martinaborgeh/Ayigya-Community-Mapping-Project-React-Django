@@ -200,6 +200,8 @@ import locateme from './1900048.png'
 import QueryPanel from './querypanel'
 import SimpleQuery from './simplequery'
 import DetailsTableView from './tableview'
+import { Group as LayerGroup } from 'ol/layer';
+import Legend from "./lengends"
 
 
 
@@ -218,6 +220,9 @@ const MapView = () => {
   const [tableColumnNames,setTableColumnNames] = useState([])
   const [tableData,seTableData] = useState([])
   const [results, setResults] = useState('');
+  const [isTableViewOpen,setIsTableViewOpen] = useState(false)
+  const [legendOverlays, setLegendOverlays] = useState([])
+
 
   // const [maplayers, setMapLayers] = useState([])
   
@@ -259,7 +264,17 @@ const MapView = () => {
         if (isMounted && !map) {
           const initialMap = new Map({
             target: mapRef.current,
-            layers: [],
+            layers: [
+
+              new LayerGroup({
+                title: 'Base maps',
+                layers: [baseLayer1]
+              }),
+              new LayerGroup({
+                title: 'Overlays',
+                layers: []
+              })
+            ],
             view: new View({
               projection: 'EPSG:4326',
               center: [-1.57465, 6.69145],
@@ -272,7 +287,7 @@ const MapView = () => {
             reverse: true,
             groupSelectStyle: 'group'
           });
-          initialMap.addLayer(baseLayer1)
+          // initialMap.addLayer(baseLayer1)
           initialMap.addControl(layerSwitcher);
           layerSwitcherRef.current = layerSwitcher;
           
@@ -342,6 +357,7 @@ const MapView = () => {
     };
 
     fetchCapabilities();
+
     
 
     return () => {
@@ -357,8 +373,25 @@ const MapView = () => {
           }
       }
   };
+  
     // console.log("maplayer",maplayers)
   }, [map]);
+
+  // useEffect(async()=>{
+  //   const fetchLegendLayers = async()=>{
+  //     const overlayGroup = map.getLayers().getArray().find(l => l.get('title') === 'Overlays');
+  //     if (overlayGroup && overlayGroup instanceof LayerGroup) {
+  //       const getLayers=overlayGroup
+  //       getLayers.length!==0?setLegendOverlays(getLayers):setLegendOverlays([])
+  
+  //     }
+  
+  //   }
+  //   await fetchLegendLayers()
+
+  // },[map])
+
+ 
 
  
   const handleZoomToLocation = () => {
@@ -375,6 +408,29 @@ const MapView = () => {
     }
   };
 
+  const addLayerToMap = async(layer) => {
+    if (map && layer) {
+      const overlayGroup = map.getLayers().getArray().find(l => l.get('title') === 'Overlays');
+      if (overlayGroup && overlayGroup instanceof LayerGroup) {
+        overlayGroup.getLayers().push(layer);
+
+
+      } else {
+        map.addLayer(layer);
+      }
+      
+      console.log(`Layer ${layer.get('title')} added to map`);
+    }
+  };
+
+  const RerenderLayerSwitcherPanel = async(layer) => {
+    if (layerSwitcherRef.current && layer) {
+      // Ensure the layer is in the layer switcher's list
+      layerSwitcherRef.current.renderPanel();
+      console.log(`Layer ${layer.get('title')} added to layer switcher`);
+    }
+  };
+
   return (
     <div className="flex flex-col w-full h-screen">
       <div style={{ background: 'brown' }} className="mb-0 pb-0">
@@ -384,7 +440,7 @@ const MapView = () => {
         <div className="flex flex-1">
           {/* <div className="w-1/4"> */}
           
-            <QueryPanel results = {results} setResults = {setResults} tableData = {tableData} tableColumnNames={tableColumnNames} setTableColumnNames = {setTableColumnNames} seTableData = {seTableData} layerSwitcherRef={layerSwitcherRef} isOpen={isOpen} map={map} />
+            <QueryPanel addLayerToMap = {addLayerToMap} RerenderLayerSwitcherPanel = {RerenderLayerSwitcherPanel} setIsTableViewOpen ={setIsTableViewOpen} results = {results} setResults = {setResults} tableData = {tableData} tableColumnNames={tableColumnNames} setTableColumnNames = {setTableColumnNames} seTableData = {seTableData} layerSwitcherRef={layerSwitcherRef} isOpen={isOpen} map={map} />
           {/* </div> */}
           <div className="flex-1 relative">
             <button
@@ -394,7 +450,7 @@ const MapView = () => {
             >
               {isOpen ? "Hide Advanced Query" : "Open Advanced Query"}
             </button>
-            <SimpleQuery setResults = {setResults} setTableColumnNames = {setTableColumnNames} seTableData = {seTableData} map={map} />
+            <SimpleQuery addLayerToMap = {addLayerToMap} RerenderLayerSwitcherPanel = {RerenderLayerSwitcherPanel} setIsTableViewOpen = {setIsTableViewOpen} setResults = {setResults} setTableColumnNames = {setTableColumnNames} seTableData = {seTableData} map={map} />
             <div className="h-full bg-grey relative">
               <div
                 ref={mapRef}
@@ -408,9 +464,10 @@ const MapView = () => {
             >
               <img src={locateme} alt="Locate Me" className="w-9 h-9" />
             </button>
+            {/* <Legend isTableViewOpen= {isTableViewOpen} map={map} /> */}
           </div>
         </div>
-        <DetailsTableView map = {map} tableColumnNames = {tableColumnNames} tableData= {tableData}/>
+        {isTableViewOpen?<DetailsTableView map = {map} tableColumnNames = {tableColumnNames} tableData= {tableData}/>:null}
       </div>
     </div>
   );

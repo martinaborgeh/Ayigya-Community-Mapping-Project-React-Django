@@ -5,9 +5,10 @@ import { GeoJSON } from 'ol/format';
 import { Style, Fill, Stroke } from 'ol/style';
 
 
-function SimpleQuery({ setResults,map,setTableColumnNames,seTableData }) {
+function SimpleQuery({addLayerToMap,RerenderLayerSwitcherPanel, setResults,setIsTableViewOpen,map,setTableColumnNames,seTableData }) {
     const [value, setValue] = useState('');
     const [layerColor, setLayerColor] = useState('rgba(255, 0, 0, 1)'); 
+   
 
     const handleValueChange = (event) => {
         setValue(event.target.value);
@@ -31,6 +32,7 @@ function SimpleQuery({ setResults,map,setTableColumnNames,seTableData }) {
 
         const searchPromises = featureTypes.map(async (featureType) => {
             const typeName = featureType.getElementsByTagName('Name')[0].textContent;
+         
             const describeFeatureTypeUrl = new URL(baseUrl);
             describeFeatureTypeUrl.search = new URLSearchParams({
                 service: 'WFS',
@@ -101,6 +103,7 @@ function SimpleQuery({ setResults,map,setTableColumnNames,seTableData }) {
                     const geojsonFormat = new GeoJSON();
                     // Read features using the original EPSG:4326 projection
                     const features = geojsonFormat.readFeatures({ type: "FeatureCollection", features: results }, { featureProjection: 'EPSG:4326' });
+                    setIsTableViewOpen(true)
                     seTableData(features)
                     const vectorSource = new VectorSource({
                         features: features
@@ -111,6 +114,7 @@ function SimpleQuery({ setResults,map,setTableColumnNames,seTableData }) {
                    setLayerColor(newColor);
 
                    const vectorLayer = new VectorLayer({
+                       title:`Searched features => ${value}`,
                        source: vectorSource,
                        style: new Style({
                            fill: new Fill({
@@ -124,7 +128,8 @@ function SimpleQuery({ setResults,map,setTableColumnNames,seTableData }) {
                    });
 
 
-                    map.addLayer(vectorLayer); // Add the vector layer to the map
+                    addLayerToMap(vectorLayer); // Add the vector layer to the map
+                    RerenderLayerSwitcherPanel(vectorLayer)
                 }
             }).catch(error => {
                 console.error('Error during search:', error);
