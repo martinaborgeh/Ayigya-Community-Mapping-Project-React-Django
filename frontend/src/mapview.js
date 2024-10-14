@@ -202,6 +202,7 @@ import SimpleQuery from './simplequery'
 import DetailsTableView from './tableview'
 import { Group as LayerGroup } from 'ol/layer';
 import Legend from "./lengends"
+import Overlay from 'ol/Overlay';
 
 
 
@@ -221,7 +222,7 @@ const MapView = () => {
   const [tableData,seTableData] = useState([])
   const [results, setResults] = useState('');
   const [isTableViewOpen,setIsTableViewOpen] = useState(false)
-  const [legendOverlays, setLegendOverlays] = useState([])
+  const popupRef = useRef();
 
 
   // const [maplayers, setMapLayers] = useState([])
@@ -290,6 +291,17 @@ const MapView = () => {
           // initialMap.addLayer(baseLayer1)
           initialMap.addControl(layerSwitcher);
           layerSwitcherRef.current = layerSwitcher;
+
+        const layerSwitcherElement = document.querySelector('.layer-switcher');
+        if (layerSwitcherElement) {
+        layerSwitcherElement.style.top = '10px';
+        layerSwitcherElement.style.right = '10px';
+        
+      }
+
+      
+
+      
           
 
           
@@ -358,7 +370,41 @@ const MapView = () => {
 
     fetchCapabilities();
 
+    const popup = new Overlay({
+      element: popupRef.current,
+      positioning: 'bottom-center',
+      stopEvent: false,
+      offset: [0, -10]
+    });
+    if(map){map.addOverlay(popup)}
+  
+    if(map){map.on('click', function(evt) {
+          const feature = map.forEachFeatureAtPixel(evt.pixel, function(feature) {
+            return feature;
+          });
     
+          if (feature) {
+            const coordinates = feature.getGeometry().getCoordinates();
+            popup.setPosition(coordinates);
+    
+            // Get feature properties
+            const properties = feature.getProperties();
+            let popupContent = '<div>';
+            for (let prop in properties) {
+              if (prop !== 'geometry' && properties[prop]!==null) {
+                popupContent += `<strong>${prop}:</strong> ${properties[prop]}<br>`;
+              }
+            }
+            popupContent += '</div>';
+    
+            popupRef.current.innerHTML = popupContent;
+            popup.setPosition(evt.coordinate);
+          } else {
+            popup.setPosition(undefined);
+          }
+        });
+
+      }
 
     return () => {
       isMounted = false; // Set the mounted state to false
@@ -373,6 +419,8 @@ const MapView = () => {
           }
       }
   };
+
+  
   
     // console.log("maplayer",maplayers)
   }, [map]);
@@ -433,6 +481,7 @@ const MapView = () => {
 
   return (
     <div className="flex flex-col w-full h-screen">
+      
       <div style={{ background: 'brown' }} className="mb-0 pb-0">
         <h1 className="font-bold text-6xl pb-0 mb-0 text-white">Ayigya Community WebMap View</h1>
       </div>
@@ -457,14 +506,16 @@ const MapView = () => {
                 className="w-full h-full bg-grey"
                 style={{ zIndex: 2000 }}
               />
+         
             </div>
-            <button
+            <div ref={popupRef} className="ol-popup"></div>
+            {/* <button
               onClick={handleZoomToLocation}
               className="absolute top-20 right-5 z-[3050]"
             >
               <img src={locateme} alt="Locate Me" className="w-9 h-9" />
-            </button>
-            {/* <Legend isTableViewOpen= {isTableViewOpen} map={map} /> */}
+            </button> */}
+            <Legend  map={map} />
           </div>
         </div>
         {isTableViewOpen?<DetailsTableView map = {map} tableColumnNames = {tableColumnNames} tableData= {tableData}/>:null}
