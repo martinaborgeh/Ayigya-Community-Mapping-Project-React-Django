@@ -561,6 +561,10 @@ video {
   position: sticky;
 }
 
+.bottom-2 {
+  bottom: 0.5rem;
+}
+
 .bottom-4 {
   bottom: 1rem;
 }
@@ -577,8 +581,8 @@ video {
   left: 5rem;
 }
 
-.left-4 {
-  left: 1rem;
+.right-4 {
+  right: 1rem;
 }
 
 .right-5 {
@@ -599,10 +603,6 @@ video {
 
 .top-40 {
   top: 10rem;
-}
-
-.right-4 {
-  right: 1rem;
 }
 
 .z-10 {
@@ -867,6 +867,11 @@ video {
 .bg-gray-900 {
   --tw-bg-opacity: 1;
   background-color: rgb(17 24 39 / var(--tw-bg-opacity));
+}
+
+.bg-red-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(239 68 68 / var(--tw-bg-opacity));
 }
 
 .bg-white {

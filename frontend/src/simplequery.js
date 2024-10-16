@@ -3,9 +3,10 @@ import { Vector as VectorLayer } from 'ol/layer';
 import { Vector as VectorSource } from 'ol/source';
 import { GeoJSON } from 'ol/format';
 import { Style, Fill, Stroke } from 'ol/style';
+import {isEmpty } from 'ol/extent';
 
 
-function SimpleQuery({addLayerToMap,RerenderLayerSwitcherPanel, setResults,setIsTableViewOpen,map,setTableColumnNames,seTableData }) {
+function SimpleQuery({addLayerToMap,RerenderLayerSwitcherPanel, setSimpleQueryResults,setIsTableViewOpen,map,setTableColumnNames,seTableData }) {
     const [value, setValue] = useState('');
     const [layerColor, setLayerColor] = useState('rgba(255, 0, 0, 1)'); 
    
@@ -98,7 +99,8 @@ function SimpleQuery({addLayerToMap,RerenderLayerSwitcherPanel, setResults,setIs
         if (event.key === 'Enter') {
             constructSearchQuery(value).then(results => {
                 console.log('Search results:', results);
-                setResults(results.length)
+                setSimpleQueryResults(results.length)
+                
                 if (map && results.length > 0) {
                     const geojsonFormat = new GeoJSON();
                     // Read features using the original EPSG:4326 projection
@@ -127,9 +129,19 @@ function SimpleQuery({addLayerToMap,RerenderLayerSwitcherPanel, setResults,setIs
                        }),
                    });
 
-
+             
                     addLayerToMap(vectorLayer); // Add the vector layer to the map
                     RerenderLayerSwitcherPanel(vectorLayer)
+
+                    const extent = vectorSource.getExtent();
+                    console.log("Layer extent:", extent);
+                    if (!isEmpty(extent)) {
+                      map.getView().fit(extent, { duration: 1000, maxZoom: 20 });
+                    } else {
+                      console.log("Invalid or empty extent");
+                    }
+          
+                    
                 }
             }).catch(error => {
                 console.error('Error during search:', error);

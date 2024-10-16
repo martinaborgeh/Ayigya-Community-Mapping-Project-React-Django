@@ -222,6 +222,7 @@ const MapView = () => {
   const [tableData,seTableData] = useState([])
   const [results, setResults] = useState('');
   const [isTableViewOpen,setIsTableViewOpen] = useState(false)
+  const [simpleQueryResults,setSimpleQueryResults] = useState(null)
   const popupRef = useRef();
 
 
@@ -499,7 +500,7 @@ const MapView = () => {
             >
               {isOpen ? "Hide Advanced Query" : "Open Advanced Query"}
             </button>
-            <SimpleQuery addLayerToMap = {addLayerToMap} RerenderLayerSwitcherPanel = {RerenderLayerSwitcherPanel} setIsTableViewOpen = {setIsTableViewOpen} setResults = {setResults} setTableColumnNames = {setTableColumnNames} seTableData = {seTableData} map={map} />
+            <SimpleQuery  addLayerToMap = {addLayerToMap} RerenderLayerSwitcherPanel = {RerenderLayerSwitcherPanel} setIsTableViewOpen = {setIsTableViewOpen} setSimpleQueryResults = {setSimpleQueryResults} setTableColumnNames = {setTableColumnNames} seTableData = {seTableData} map={map} />
             <div className="h-full bg-grey relative">
               <div
                 ref={mapRef}
@@ -516,6 +517,7 @@ const MapView = () => {
               <img src={locateme} alt="Locate Me" className="w-9 h-9" />
             </button> */}
             <Legend  map={map} />
+            {simpleQueryResults?<div ><h2 style={{color:"white"}} className='absolute font-bold  bg-red-500 p-1 rounded-md  bottom-2 left-2'>{simpleQueryResults} Results Returned</h2></div>:null}
           </div>
         </div>
         {isTableViewOpen?<DetailsTableView map = {map} tableColumnNames = {tableColumnNames} tableData= {tableData}/>:null}
